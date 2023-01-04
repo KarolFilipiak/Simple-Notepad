@@ -14,13 +14,11 @@ class Notepad extends StatefulWidget {
 }
 
 class _NotepadState extends State<Notepad> {
-  static const platform = MethodChannel('app.channel.shared.data');
   final _storage = const FlutterSecureStorage();
   String _data = "";
   final _dataFieldController = TextEditingController();
   bool _isLoading = true;
   bool _addButton = false;
-  Intent _initialIntent = Intent();
 
   void _display () async {
     if (await _storage.containsKey(key: "data") && await _storage.read(key: "data") != null)
@@ -144,7 +142,6 @@ class _NotepadState extends State<Notepad> {
   }
 
   Future<void> _initReceiveIntent() async {
-    // Platform messages may fail, so we use a try/catch PlatformException.
     try {
       final receivedIntent = await ReceiveIntent.getInitialIntent();
       
@@ -156,8 +153,6 @@ class _NotepadState extends State<Notepad> {
       {
         _saveToData("input");
       }
-      // Validate receivedIntent and warn the user, if it is not correct,
-      // but keep in mind it could be `null` or "empty"(`receivedIntent.isNull`).
     } on PlatformException {
       print("wrong platform");
     }
@@ -166,14 +161,11 @@ class _NotepadState extends State<Notepad> {
   /* late StreamSubscription _sub;
   
   Future<void> _initReceiveIntentit() async {
-    // ... check initialIntent
 
-    // Attach a listener to the stream
     _sub = ReceiveIntent.receivedIntentStream.listen((Intent? intent) {
-      // Validate receivedIntent and warn the user, if it is not correct,
       
     }, onError: (err) {
-      // Handle exception
+      
     });
 
   }
@@ -291,7 +283,6 @@ class _NotepadState extends State<Notepad> {
                       ElevatedButton(
                         onPressed: () {
                           _clear();
-                          _display();
                         },
                         style: ElevatedButton.styleFrom(
 
@@ -309,6 +300,7 @@ class _NotepadState extends State<Notepad> {
                       ElevatedButton(
                         onPressed: () {
                           _delete();
+                          _display();
                         },
                         style: ElevatedButton.styleFrom(
 
