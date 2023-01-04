@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart' hide Intent;
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'settings.dart';
 import 'package:receive_intent/receive_intent.dart';
@@ -11,6 +14,7 @@ class Notepad extends StatefulWidget {
 }
 
 class _NotepadState extends State<Notepad> {
+  static const platform = MethodChannel('app.channel.shared.data');
   final _storage = const FlutterSecureStorage();
   String _data = "";
   final _dataFieldController = TextEditingController();
@@ -23,6 +27,12 @@ class _NotepadState extends State<Notepad> {
     {
       setState(() {
         _addButton = true;
+      });
+    }
+    else
+    {
+      setState(() {
+        _addButton = false;
       });
     }
   }
@@ -63,8 +73,15 @@ class _NotepadState extends State<Notepad> {
 
   }
 
-  void _saveToData(var data) async {
-    _storage.write(key: "data", value: data);
+  void _saveToData(String? input) async {
+    if (input != null && input !="null") {
+      _storage.write(key: "data", value: input);
+      setState(() {
+        /* _data = sharedData;
+        _dataFieldController.text = sharedData; */
+      });
+      SystemNavigator.pop();
+    }
 
   }
 
@@ -113,6 +130,7 @@ class _NotepadState extends State<Notepad> {
 
   void _delete() async {
     _storage.delete(key: "note");
+    _storage.delete(key: "data");
     _clear();
     snack(Overlay.of(context), "Note deleted form storage", color_notification_negative);
   }
@@ -121,34 +139,50 @@ class _NotepadState extends State<Notepad> {
   void initState() {
     _read();
     super.initState();
+    _initReceiveIntent();
+    
   }
 
-  void _init() async {
-    final receivedIntent = await ReceiveIntent.getInitialIntent();
+  Future<void> _initReceiveIntent() async {
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      final receivedIntent = await ReceiveIntent.getInitialIntent();
+      
+      if (receivedIntent != null)
+      {
+        _saveToData(receivedIntent.data.toString());
+      }
+      else
+      {
+        _saveToData("input");
+      }
+      // Validate receivedIntent and warn the user, if it is not correct,
+      // but keep in mind it could be `null` or "empty"(`receivedIntent.isNull`).
+    } on PlatformException {
+      print("wrong platform");
+    }
+  }
 
-    if (!mounted) return;
+  /* late StreamSubscription _sub;
+  
+  Future<void> _initReceiveIntentit() async {
+    // ... check initialIntent
 
-    setState(() {
-      _initialIntent = receivedIntent!;
+    // Attach a listener to the stream
+    _sub = ReceiveIntent.receivedIntentStream.listen((Intent? intent) {
+      // Validate receivedIntent and warn the user, if it is not correct,
+      
+    }, onError: (err) {
+      // Handle exception
     });
+
   }
 
-  Widget _buildFromIntent(String label, Intent intent) {
-    _saveToData(intent.data);
-    return Center(
-      child: Column(
-        children: [
-          /* Text(label),
-          Text(
-              "fromPackage: ${intent.fromPackageName}\nfromSignatures: ${intent.fromSignatures}"),
-          Text(
-              'action: ${intent.action}\ndata: ${intent.data}\ncategories: ${intent.categories}'),
-          Text("extras: ${intent.extra}") */
-          
-        ],
-      ),
-    );
-  }
+  @override
+  void dispose(){
+    super.dispose();
+    _sub.cancel();
+  } */
 
   @override
   Widget build(BuildContext context) {
@@ -238,6 +272,7 @@ class _NotepadState extends State<Notepad> {
                       ),
                       ElevatedButton(
                         onPressed: () {
+                          _display();
                           _read();
                         },
                         style: ElevatedButton.styleFrom(
@@ -256,6 +291,7 @@ class _NotepadState extends State<Notepad> {
                       ElevatedButton(
                         onPressed: () {
                           _clear();
+                          _display();
                         },
                         style: ElevatedButton.styleFrom(
 
