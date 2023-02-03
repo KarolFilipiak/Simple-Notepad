@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'settings.dart';
 import 'package:receive_intent/receive_intent.dart';
+import 'dart:io' show Platform;
 
 class Notepad extends StatefulWidget {
   const Notepad({Key? key}) : super(key: key);
@@ -137,7 +138,8 @@ class _NotepadState extends State<Notepad> {
   void initState() {
     _read();
     super.initState();
-    _initReceiveIntent();
+    if (Platform.isAndroid)
+      _initReceiveIntent();
     
   }
 
